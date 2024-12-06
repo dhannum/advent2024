@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as Process from "node:process";
 const rawFile = fs.readFileSync('input.txt','utf8')
 
 const lines = rawFile.split('\n').filter((line) => line.length > 0)
@@ -33,7 +34,7 @@ class Room {
         }
     }
 
-    // moves a guard a single space and returns if the guard hit a wall or went outside
+    // moves a guard a single space and returns the outcome
     moveGuardOneSpace() {
         switch (this.guard.direction) {
             case Direction.NORTH:
@@ -80,9 +81,10 @@ class Room {
     }
 
     moveGuardUntilObstacle() {
-        while (this.moveGuardOneSpace() === MoveOutcome.NO_OBSTACLE) {}
+        let lastResult: MoveOutcome
+        while ((lastResult = this.moveGuardOneSpace()) === MoveOutcome.NO_OBSTACLE) {}
 
-        if (!this.validCoords(this.guard.x, this.guard.y)) {
+        if (lastResult === MoveOutcome.OUTSIDE) {
             this.guardOut = true
             return MoveOutcome.OUTSIDE
         } else {
@@ -104,9 +106,9 @@ class Room {
     }
 }
 
-const room = new Room(charGrid)
-
 // part 1 4903
+
+const room = new Room(charGrid)
 
 while (!room.guardOut) {
     room.moveGuardUntilObstacle()
@@ -114,32 +116,23 @@ while (!room.guardOut) {
 
 console.log(room.countVisited())
 
-// part 2
+// part 2 - 1911
 
-const isCyclical = (pairs: Array<{ x: number, y: number }>) => {
-    if (pairs.length < 8) return false
-
-    const last4 = pairs.slice(-4)
-    const firstPart = pairs.slice(0, -4)
-
-    return firstPart.indexOf(last4[0]) !== -1 &&
-        firstPart.indexOf(last4[1]) === firstPart.indexOf(last4[0]) + 1 &&
-        firstPart.indexOf(last4[2]) === firstPart.indexOf(last4[0]) + 2 &&
-        firstPart.indexOf(last4[3]) === firstPart.indexOf(last4[0]) + 3
+// if the last element in the list appears anywhere earlier, we have a cycle
+const isCyclical = (guardHistory: Array<Guard>) => {
+    return guardHistory.filter(guard =>
+    {
+        const last = guardHistory[guardHistory.length - 1]
+        return guard.x === last.x && guard.y === last.y && guard.direction === last.direction
+    }).length > 1
 }
 
 const isStuckInLoop = (room: Room) => {
-    const vistedCells: Array<{ x: number, y: number }> = []
+    const guardHistory: Array<Guard> = []
 
-    let cycles = 0
-
-    while (!room.guardOut && !isCyclical(vistedCells)) {
+    while (!room.guardOut && !isCyclical(guardHistory)) {
         room.moveGuardUntilObstacle()
-        vistedCells.push({x: room.guard.x, y: room.guard.y})
-        cycles++
-
-        if (cycles >= 1000)
-            console.log('help')
+        guardHistory.push({...room.guard})
     }
 
     return !room.guardOut
@@ -147,6 +140,7 @@ const isStuckInLoop = (room: Room) => {
 
 const roomList: Array<Room> = []
 
+// generate the universe of possible modified rooms
 for (let x = 0; x < charGrid[0].length; x++) {
     for (let y = 0; y < charGrid.length; y++) {
         const newCharGrid = structuredClone(charGrid)
@@ -158,10 +152,6 @@ for (let x = 0; x < charGrid[0].length; x++) {
 }
 
 let c = 0
-const stuckRooms = roomList.filter((room) => {
-    const answer = isStuckInLoop(room)
-    console.log(`${c++} -> ${room.guardOut}`)
-    return answer
-})
+const stuckRooms = roomList.filter(isStuckInLoop)
 
 console.log(stuckRooms.length)
