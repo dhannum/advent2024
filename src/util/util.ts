@@ -1,8 +1,8 @@
-import * as fs from "node:fs";
+import * as fs from 'node:fs'
 
 export const zip = <A, B>(a: Array<A>, b: Array<B>): [A, B][] => a.map((k, i) => [k, b[i]])
 
-export const isEqual = <A> (a: Array<A>, b: Array<A>): boolean => {
+export const isEqual = <A>(a: Array<A>, b: Array<A>): boolean => {
     if (a.length !== b.length) return false
     for (let i = 0; i < a.length; i++) {
         if (a[i] !== b[i]) return false
@@ -11,25 +11,27 @@ export const isEqual = <A> (a: Array<A>, b: Array<A>): boolean => {
 }
 
 export const toWindows = (inputArray: number[], size: number) => {
-    return Array.from(
-        {length: inputArray.length - (size - 1)},
-        (_, index) => inputArray.slice(index, index+size)
+    return Array.from({ length: inputArray.length - (size - 1) }, (_, index) =>
+        inputArray.slice(index, index + size),
     )
 }
 
-export const square = <T> (inputArray: T[][]): T[][] => {
+export const square = <T>(inputArray: T[][]): T[][] => {
     const max = Math.max(...inputArray.map((row) => row.length))
-    const rowsPadded = inputArray.map((row) => row.concat(Array.from({length: max - row.length}, () => undefined as T)))
+    const rowsPadded = inputArray.map((row) =>
+        row.concat(Array.from({ length: max - row.length }, () => undefined as T)),
+    )
 
-    const extraRows = Array.from({length: inputArray[0].length - inputArray.length}, () => Array.from({length: inputArray[0].length}, () => undefined as T))
+    const extraRows = Array.from({ length: inputArray[0].length - inputArray.length }, () =>
+        Array.from({ length: inputArray[0].length }, () => undefined as T),
+    )
     return rowsPadded.concat(extraRows)
 }
 
-export const transpose = <T> (inputArray: T[][]): T[][] => {
-    if (inputArray.length != inputArray[0].length)
-        throw Error('array not square')
+export const transpose = <T>(inputArray: T[][]): T[][] => {
+    if (inputArray.length != inputArray[0].length) throw Error('array not square')
 
-    return inputArray[0].map((_, colIndex) => inputArray.map(row => row[colIndex]))
+    return inputArray[0].map((_, colIndex) => inputArray.map((row) => row[colIndex]))
 }
 
 export const dumpToFile = (filename: string, data: string[] | string[][]) => {
@@ -39,6 +41,8 @@ export const dumpToFile = (filename: string, data: string[] | string[][]) => {
     }
 
     const file = fs.createWriteStream(filename)
-    toDump.forEach((v) => { file.write(v + '\n') })
+    toDump.forEach((v) => {
+        file.write(v + '\n')
+    })
     file.end()
 }

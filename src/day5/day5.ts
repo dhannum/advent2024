@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-const rawFile = fs.readFileSync('input.txt','utf8')
+const rawFile = fs.readFileSync('input.txt', 'utf8')
 
 const lines = rawFile.split('\n').filter((line) => line.length > 0)
 
@@ -10,12 +10,16 @@ interface Rule {
 
 // Read input
 
-const rules: Array<Rule> = lines.filter((line) => line.includes('|')).map((line) => {
-    const pair = line.split('|').map((num) => parseInt(num))
-    return { first: pair[0], second: pair[1] }
-})
+const rules: Array<Rule> = lines
+    .filter((line) => line.includes('|'))
+    .map((line) => {
+        const pair = line.split('|').map((num) => parseInt(num))
+        return { first: pair[0], second: pair[1] }
+    })
 
-const updates = lines.filter((line) => !line.includes('|')).map((line) => line.split(',').map((num) => parseInt(num)))
+const updates = lines
+    .filter((line) => !line.includes('|'))
+    .map((line) => line.split(',').map((num) => parseInt(num)))
 
 // check validity
 
@@ -36,12 +40,12 @@ const validUpdates = updates.filter((update) => isUpdateValid(update, rules))
 const middle = (values: Array<number>) => {
     const half = Math.floor(values.length / 2)
 
-    return values.length % 2
-            ? values[half]
-            : (values[half - 1] + values[half]) / 2
+    return values.length % 2 ? values[half] : (values[half - 1] + values[half]) / 2
 }
 
-const summedMiddleValues = validUpdates.map((update) => middle(update)).reduce((acc, val) => acc + val, 0)
+const summedMiddleValues = validUpdates
+    .map((update) => middle(update))
+    .reduce((acc, val) => acc + val, 0)
 
 console.log(summedMiddleValues)
 
@@ -54,7 +58,11 @@ const fixUpdate = (update: Array<number>, rules: Array<Rule>) => {
 
     for (let i = 0; i < TRIES; i++) {
         rules.map((rule) => {
-            if (update.indexOf(rule.first) !== -1 && update.indexOf(rule.second) !== -1 && update.indexOf(rule.first) > update.indexOf(rule.second)) {
+            if (
+                update.indexOf(rule.first) !== -1 &&
+                update.indexOf(rule.second) !== -1 &&
+                update.indexOf(rule.first) > update.indexOf(rule.second)
+            ) {
                 const first = update.indexOf(rule.first)
                 const second = update.indexOf(rule.second)
 
@@ -70,11 +78,13 @@ const fixUpdate = (update: Array<number>, rules: Array<Rule>) => {
     throw `${update} is still invalid after ${TRIES} fix iterations`
 }
 
-let invalidUpdates = updates.filter((update) => !isUpdateValid(update, rules))
+const invalidUpdates = updates.filter((update) => !isUpdateValid(update, rules))
 
 // fix them in place
 invalidUpdates.map((update) => fixUpdate(update, rules))
 
-const summedMiddleValuesAfterFix = invalidUpdates.map((update) => middle(update)).reduce((acc, val) => acc + val, 0)
+const summedMiddleValuesAfterFix = invalidUpdates
+    .map((update) => middle(update))
+    .reduce((acc, val) => acc + val, 0)
 
 console.log(summedMiddleValuesAfterFix)

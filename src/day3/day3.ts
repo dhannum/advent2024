@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-const rawFile = fs.readFileSync('input.txt','utf8')
+const rawFile = fs.readFileSync('input.txt', 'utf8')
 
 const lines = rawFile.split('\n').filter((line) => line.length > 0)
 
@@ -28,11 +28,10 @@ const totalsWithCond = lines.map((line) => {
     while ((match = regex.exec(line)) !== null) {
         if (match[1] === 'do()') {
             enabled = true
-        } else if (match[2] === 'don\'t()') {
+        } else if (match[2] === "don't()") {
             enabled = false
         } else if (match[3] && match[4]) {
-            if (enabled)
-                results.push(parseInt(match[3]) * parseInt(match[4]))
+            if (enabled) results.push(parseInt(match[3]) * parseInt(match[4]))
         }
     }
 

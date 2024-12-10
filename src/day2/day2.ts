@@ -1,10 +1,12 @@
-import * as fs from 'fs';
-import {isEqual, toWindows} from "../util/util";
-const rawFile = fs.readFileSync('input.txt','utf8')
+import * as fs from 'fs'
+import { isEqual, toWindows } from '../util/util'
+const rawFile = fs.readFileSync('input.txt', 'utf8')
 
 const lines = rawFile.split('\n')
 
-const reports = lines.filter((line) => !!line).map((line) => line.split(' ').map((v) => parseInt(v)))
+const reports = lines
+    .filter((line) => !!line)
+    .map((line) => line.split(' ').map((v) => parseInt(v)))
 
 const isSafe = (report: number[]) => {
     const sortedUp = report.toSorted((a, b) => a - b)
@@ -31,7 +33,7 @@ console.log(safeReports.length)
 const isSafeWithDampener = (report: number[]) => {
     if (isSafe(report)) return true
 
-    for(let i = 0; i < report.length; i++) {
+    for (let i = 0; i < report.length; i++) {
         const spliced = report.toSpliced(i, 1)
         if (isSafe(spliced)) return true
     }
