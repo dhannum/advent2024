@@ -23,6 +23,7 @@ const transformOne = (num: number) => {
     }
 }
 
+// brute force
 const transform = (nums: number[]): Array<number> => {
     return nums.map(transformOne).flat()
 }
@@ -36,8 +37,23 @@ console.log(current.length)
 
 // part 2
 
-current = numbers
-for (let i = 0; i < 75; i++) {
-    console.log(`${i} before transform ${current.length}`)
-    current = transform(current)
+const transformCounts = (counts: Map<number, number>): Map<number, number> => {
+    const newCounts = new Map()
+    for (const [num, count] of counts.entries()) {
+        const transformed = transformOne(num)
+        for (const newNum of transformed) {
+            newCounts.set(newNum, (newCounts.get(newNum) ?? 0) + count)
+        }
+    }
+    return newCounts
 }
+
+// not brute force
+let counts = new Map(numbers.map((num) => [num, 1]))
+for (let i = 0; i < 75; i++) {
+    counts = transformCounts(counts)
+}
+
+const length = Array.from(counts.entries()).reduce((acc, [, count]) => acc + count, 0)
+
+console.log(length)
