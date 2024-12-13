@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-const rawFile = fs.readFileSync('small.txt', 'utf8')
+const rawFile = fs.readFileSync('input.txt', 'utf8')
 
 const lines = rawFile.split('\n').filter((line) => line.length > 0)
 let board = lines.map((line) => line.split(''))
@@ -24,6 +24,7 @@ interface FenceLeg {
     direction: 'none' | 'up' | 'down' | 'left' | 'right'
 }
 
+// creates a list of all fence edges required for this blob, recursively
 const fenceRegion = (
     x: number,
     y: number,
@@ -78,9 +79,13 @@ const totals: Array<Measurements> = []
 for (let x = 0; x < board[0].length; x++) {
     for (let y = 0; y < board.length; y++) {
         if (board[y][x] != ALREADY_COUNTED) {
+            // get all the fence legs
             const r = fenceRegion(x, y, board[y][x], board)
+
+            // mark them counted for next time
             r.forEach(({ plot: { x, y } }) => (board[y][x] = ALREADY_COUNTED))
 
+            // compute area and perimeter
             const area = new Set(r.map(({ plot }) => `${plot.x},${plot.y}`)).size
             const perimeter = r.filter(({ direction }) => direction !== 'none').length
             totals.push({ area, perimeter })
@@ -97,8 +102,12 @@ console.log(totalPrice)
 board = lines.map((line) => line.split(''))
 const bulkTotals: Array<Measurements> = []
 
+interface OptionalFenceLeg extends FenceLeg {
+    deleted: boolean
+}
+
 // find adjacent fence pieces and remove them
-const makeFenceBulk = (r: Array<FenceLeg>) => {
+const makeFenceBulk = (r: Array<OptionalFenceLeg>) => {
     for (let i = 0; i < r.length; i++) {
         let indexOfAdjacent = -1
 
@@ -109,7 +118,8 @@ const makeFenceBulk = (r: Array<FenceLeg>) => {
                         i != j &&
                         leg.direction === r[i].direction &&
                         leg.plot.y === r[i].plot.y &&
-                        Math.abs(r[i].plot.x - leg.plot.x) === 1,
+                        r[i].plot.x - leg.plot.x === 1 &&
+                        !leg.deleted,
                 )) !== -1) ||
             ((r[i].direction === 'left' || r[i].direction === 'right') &&
                 (indexOfAdjacent = r.findIndex(
@@ -117,10 +127,13 @@ const makeFenceBulk = (r: Array<FenceLeg>) => {
                         i != j &&
                         leg.direction === r[i].direction &&
                         leg.plot.x === r[i].plot.x &&
-                        Math.abs(r[i].plot.y - leg.plot.y) === 1,
+                        r[i].plot.y - leg.plot.y === 1 &&
+                        !leg.deleted,
                 )) !== -1)
         ) {
-            return makeFenceBulk(r.slice(0, indexOfAdjacent).concat(r.slice(indexOfAdjacent + 1)))
+            return makeFenceBulk(
+                r.map((leg, idx) => (indexOfAdjacent === idx ? { ...leg, deleted: true } : leg)),
+            )
         }
     }
 
@@ -130,15 +143,25 @@ const makeFenceBulk = (r: Array<FenceLeg>) => {
 for (let x = 0; x < board[0].length; x++) {
     for (let y = 0; y < board.length; y++) {
         if (board[y][x] != ALREADY_COUNTED) {
-            const v = board[y][x]
-
+            // get all the fence legs
             const r = fenceRegion(x, y, board[y][x], board)
+
+            // mark them counted for next time
             r.forEach(({ plot: { x, y } }) => (board[y][x] = ALREADY_COUNTED))
 
+            // area is easy
             const area = new Set(r.map(({ plot }) => `${plot.x},${plot.y}`)).size
-            const bulkFence = makeFenceBulk(r)
-            const perimeter = bulkFence.filter(({ direction }) => direction !== 'none').length
-            console.log(`Area ${x}, ${y} of letter ${v} with area: ${area}, perimeter: ${perimeter}`)
+
+            // perimeter requires removing adjacent fence legs
+            const enrichedFence: Array<OptionalFenceLeg> = r.map((leg) => {
+                return { ...leg, deleted: false }
+            })
+            const bulkFence = makeFenceBulk(enrichedFence)
+            const perimeter = bulkFence.filter(
+                ({ deleted, direction }) => direction !== 'none' && !deleted,
+            ).length
+
+            // all done with this region
             bulkTotals.push({ area, perimeter })
         }
     }
