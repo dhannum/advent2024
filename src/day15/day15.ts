@@ -276,8 +276,9 @@ const tryMoveBoxWide = (delta: Pair, boxLoc: Pair, warehouse: Array<Array<Space2
             return false
         } else if (warehouse[boxLoc.y][boxLoc.x + delta.x + 1] === Space2.Empty) {
             // empty space
-            warehouse[boxLoc.y][boxLoc.x + 1] = Space2.BoxLeft
-            warehouse[boxLoc.y][boxLoc.x + 2] = Space2.BoxRight
+            warehouse[boxLoc.y][boxLoc.x + 2] = Space2.BoxLeft
+            warehouse[boxLoc.y][boxLoc.x + 3] = Space2.BoxRight
+            warehouse[boxLoc.y][boxLoc.x + 1] = Space2.Empty
             warehouse[boxLoc.y][boxLoc.x] = Space2.Empty
             return true
         } else if (warehouse[boxLoc.y][boxLoc.x + delta.x + 1] === Space2.BoxLeft) {
@@ -288,8 +289,9 @@ const tryMoveBoxWide = (delta: Pair, boxLoc: Pair, warehouse: Array<Array<Space2
                 warehouse,
             )
             if (didItMove) {
-                warehouse[boxLoc.y][boxLoc.x + 1] = Space2.BoxLeft
-                warehouse[boxLoc.y][boxLoc.x + 2] = Space2.BoxRight
+                warehouse[boxLoc.y][boxLoc.x + 2] = Space2.BoxLeft
+                warehouse[boxLoc.y][boxLoc.x + 3] = Space2.BoxRight
+                warehouse[boxLoc.y][boxLoc.x + 1] = Space2.Empty
                 warehouse[boxLoc.y][boxLoc.x] = Space2.Empty
             }
             return didItMove
@@ -303,8 +305,9 @@ const tryMoveBoxWide = (delta: Pair, boxLoc: Pair, warehouse: Array<Array<Space2
             return false
         } else if (warehouse[boxLoc.y][boxLoc.x + delta.x] === Space2.Empty) {
             // empty space
-            warehouse[boxLoc.y][boxLoc.x - 1] = Space2.BoxLeft
-            warehouse[boxLoc.y][boxLoc.x] = Space2.BoxRight
+            warehouse[boxLoc.y][boxLoc.x - 2] = Space2.BoxLeft
+            warehouse[boxLoc.y][boxLoc.x - 1] = Space2.BoxRight
+            warehouse[boxLoc.y][boxLoc.x] = Space2.Empty
             warehouse[boxLoc.y][boxLoc.x + 1] = Space2.Empty
             return true
         } else if (warehouse[boxLoc.y][boxLoc.x + delta.x] === Space2.BoxRight) {
@@ -315,8 +318,9 @@ const tryMoveBoxWide = (delta: Pair, boxLoc: Pair, warehouse: Array<Array<Space2
                 warehouse,
             )
             if (didItMove) {
-                warehouse[boxLoc.y][boxLoc.x - 1] = Space2.BoxLeft
-                warehouse[boxLoc.y][boxLoc.x] = Space2.BoxRight
+                warehouse[boxLoc.y][boxLoc.x - 2] = Space2.BoxLeft
+                warehouse[boxLoc.y][boxLoc.x - 1] = Space2.BoxRight
+                warehouse[boxLoc.y][boxLoc.x] = Space2.Empty
                 warehouse[boxLoc.y][boxLoc.x + 1] = Space2.Empty
             }
             return didItMove
@@ -357,8 +361,9 @@ const moveOneSpotWide = (delta: Pair, robot: Pair, warehouse: Array<Array<Space2
         }
     } else {
         // left or right
-        if (warehouse[robot.y][robot.x + delta.x] === Space2.Empty) {
-            robot.x = robot.x + delta.x
+        if (warehouse[robot.y][robot.x + delta.x] === Space2.Empty &&
+            warehouse[robot.y][robot.x + delta.x * 2] === Space2.Empty) {
+            robot.x = robot.x + delta.x * 2
             robot.y = robot.y + delta.y
         } else if (warehouse[robot.y][robot.x + delta.x] === Space2.BoxLeft) {
             const didItMove = tryMoveBoxWide(
@@ -367,7 +372,7 @@ const moveOneSpotWide = (delta: Pair, robot: Pair, warehouse: Array<Array<Space2
                 warehouse,
             )
             if (didItMove) {
-                robot.x = robot.x + delta.x
+                robot.x = robot.x + delta.x * 2
                 robot.y = robot.y + delta.y
             }
         } else if (warehouse[robot.y][robot.x + delta.x] === Space2.BoxRight) {
@@ -377,7 +382,7 @@ const moveOneSpotWide = (delta: Pair, robot: Pair, warehouse: Array<Array<Space2
                 warehouse,
             )
             if (didItMove) {
-                robot.x = robot.x + delta.x
+                robot.x = robot.x + delta.x * 2
                 robot.y = robot.y + delta.y
             }
         }
@@ -397,12 +402,12 @@ moves.forEach((move, i) => {
     } else if (move === Direction.Right) {
         moveOneSpotWide({ x: 1, y: 0 }, robotLoc, wideWarehouse)
     }
-    if (i >= 8)
-        console.log(`check`)
-    console.log(
-        `After move ${move === Direction.Up ? '^' : move === Direction.Down ? 'v' : move === Direction.Left ? '<' : '>'} with robot at ${robotLoc.x}, ${robotLoc.y}`,
-    )
-    printWarehouse(wideWarehouse, robotLoc)
+    // if (i >= 8)
+    //     console.log(`check`)
+    // console.log(
+    //     `After move ${move === Direction.Up ? '^' : move === Direction.Down ? 'v' : move === Direction.Left ? '<' : '>'} with robot at ${robotLoc.x}, ${robotLoc.y}`,
+    // )
+    // printWarehouse(wideWarehouse, robotLoc)
 })
 
 printWarehouse(wideWarehouse, robotLoc)
