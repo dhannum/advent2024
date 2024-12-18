@@ -37,13 +37,13 @@ const neighbors = (node: Pair, grid: Array<Array<boolean>>) => {
     if (node.x - 1 >= 0 && !grid[node.y][node.x - 1]) {
         ret.push({ x: node.x - 1, y: node.y })
     }
-    if (node.x + 1 < gridSize && !grid[node.y][node.x + 1]) {
+    if (node.x + 1 < grid[0].length && !grid[node.y][node.x + 1]) {
         ret.push({ x: node.x + 1, y: node.y })
     }
     if (node.y - 1 >= 0 && !grid[node.y - 1][node.x]) {
         ret.push({ x: node.x, y: node.y - 1 })
     }
-    if (node.y + 1 < gridSize && !grid[node.y + 1][node.x]) {
+    if (node.y + 1 < grid.length && !grid[node.y + 1][node.x]) {
         ret.push({ x: node.x, y: node.y + 1 })
     }
     return ret
@@ -60,8 +60,8 @@ const astar = (start: Pair, end: Pair, grid: Array<Array<boolean>>) => {
     openList.push(start)
     bestCostsSoFar.set(JSON.stringify(start), 0)
 
-    for (let y = 0; y < gridSize; y++) {
-        for (let x = 0; x < gridSize; x++) {
+    for (let y = 0; y < grid.length; y++) {
+        for (let x = 0; x < grid[9].length; x++) {
             const key = JSON.stringify({ x, y })
             guessedCosts.set(key, heuristic({ x, y }, end))
         }
@@ -124,7 +124,7 @@ const astar = (start: Pair, end: Pair, grid: Array<Array<boolean>>) => {
         })
     }
 
-    // No result was found -- empty array signifies failure to find path
+    // no path
     return []
 }
 
