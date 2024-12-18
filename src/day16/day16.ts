@@ -23,6 +23,12 @@ interface Pair {
     y: number
 }
 
+interface PathStep {
+    x: number
+    y: number
+    dir: Direction
+}
+
 const maze: Array<Array<Space>> = []
 
 lines.forEach((line) => {
@@ -48,117 +54,36 @@ lines.forEach((line) => {
 
 // part 1
 
-// type Key = { x: number; y: number; dir: Direction }
-// const memoize: Map<string, number> = new Map()
-//
-// returns the cheapest cost of a path from x,y to the end
-// const cheapestRoute = (
-//     x: number,
-//     y: number,
-//     dir: Direction,
-//     maze: Array<Array<Space>>,
-//     seen: Array<Key>,
-// ): number => {
-//     if (x === 135 && y === 6)
-//         console.log(`hit the spot from direction ${dir}`)
-//
-//     const key: string = JSON.stringify({ x, y, dir })
-//     const cached = memoize.get(key)
-//     if (cached !== undefined) {
-//         return cached
-//     }
-//
-//     if (maze[y][x] === Space.Wall) {
-//         throw new Error("shouldn't be called on a wall")
-//     }
-//     if (maze[y][x] === Space.End) {
-//         memoize.set(key, 0)
-//         return 0
-//     }
-//
-//     let u = Infinity
-//     let d = Infinity
-//     let l = Infinity
-//     let r = Infinity
-//
-//     // compute costs in all directions if they are not walls and we haven't seen them before
-//     if (maze[y - 1][x] !== Space.Wall && seen.find((key) => key.x === x && key.y === y - 1 && key.dir === Direction.Up) === undefined && seen.find((key) => key.x === x && key.y === y - 1 && key.dir === Direction.Down) === undefined) {
-//         u = cheapestRoute(x, y - 1, Direction.Up, maze, seen.concat({ x, y: y - 1, dir: Direction.Up }))
-//         if (seen.length === 2) console.log(`top u: ${u}`)
-//         if (x === 136 || y === 7) console.log(`u: ${u}`)
-//     }
-//     if (maze[y + 1][x] !== Space.Wall && seen.find((key) => key.x === x && key.y === y + 1 && key.dir === Direction.Down) === undefined && seen.find((key) => key.x === x && key.y === y + 1 && key.dir === Direction.Up) === undefined) {
-//         d = cheapestRoute(x, y + 1, Direction.Down, maze, seen.concat({ x, y: y + 1, dir: Direction.Down }))
-//         if (seen.length === 2) console.log(`top d: ${d}`)
-//         if (x === 136 || y === 7) console.log(`u: ${u}`)
-//     }
-//     if (maze[y][x - 1] !== Space.Wall && seen.find((key) => key.x === x - 1 && key.y === y && key.dir === Direction.Left) === undefined && seen.find((key) => key.x === x - 1 && key.y === y && key.dir === Direction.Right) === undefined) {
-//         l = cheapestRoute(x - 1, y, Direction.Left, maze, seen.concat({ x: x - 1, y, dir: Direction.Left }))
-//         if (seen.length === 2) console.log(`top l: ${l}`)
-//         if (x === 136 || y === 7) console.log(`u: ${u}`)
-//     }
-//     if (maze[y][x + 1] !== Space.Wall && seen.find((key) => key.x === x + 1 && key.y === y && key.dir === Direction.Right) === undefined && seen.find((key) => key.x === x + 1 && key.y === y && key.dir === Direction.Left) === undefined) {
-//         r = cheapestRoute(x + 1, y, Direction.Right, maze, seen.concat({ x: x + 1, y, dir: Direction.Right }))
-//         if (seen.length === 2) console.log(`top r: ${r}`)
-//         if (x === 136 || y === 7) console.log(`u: ${u}`)
-//     }
-//
-//     // add turn penalties
-//     if (dir === Direction.Up) {
-//         d += 2000
-//         r += 1000
-//         l += 1000
-//     } else if (dir === Direction.Down) {
-//         u += 2000
-//         r += 1000
-//         l += 1000
-//     } else if (dir === Direction.Left) {
-//         r += 2000
-//         u += 1000
-//         d += 1000
-//     } else if (dir === Direction.Right) {
-//         l += 2000
-//         u += 1000
-//         d += 1000
-//     } else {
-//         throw new Error()
-//     }
-//     const cheapest = 1 + Math.min(u, d, l, r)
-//
-//     if ((x >= 132) && y <= 10) {
-//         console.log(key, cheapest)
-//     }
-//     memoize.set(key, cheapest)
-//
-//     return cheapest
-// }
+const equal = (a: PathStep, b: PathStep) => a.x === b.x && a.y === b.y && a.dir === b.dir
 
 const heuristic = (a: Pair, b: Pair) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
 const neighbors = (node: Pair, grid: Array<Array<Space>>) => {
-    const ret: Array<Pair> = []
+    const ret: Array<PathStep> = []
 
     if (node.x - 1 >= 0 && grid[node.y][node.x - 1] != Space.Wall) {
-        ret.push({ x: node.x - 1, y: node.y })
+        ret.push({ x: node.x - 1, y: node.y, dir: Direction.Left })
     }
     if (node.x + 1 < grid[0].length && grid[node.y][node.x + 1] != Space.Wall) {
-        ret.push({ x: node.x + 1, y: node.y })
+        ret.push({ x: node.x + 1, y: node.y, dir: Direction.Right })
     }
     if (node.y - 1 >= 0 && grid[node.y - 1][node.x] != Space.Wall) {
-        ret.push({ x: node.x, y: node.y - 1 })
+        ret.push({ x: node.x, y: node.y - 1, dir: Direction.Up })
     }
     if (node.y + 1 < grid.length && grid[node.y + 1][node.x] != Space.Wall) {
-        ret.push({ x: node.x, y: node.y + 1 })
+        ret.push({ x: node.x, y: node.y + 1, dir: Direction.Down })
     }
     return ret
 }
 
-const astar = (start: Pair, end: Pair, grid: Array<Array<Space>>) => {
-    const openList: Array<Pair> = []
-    const closedList: Array<Pair> = []
+type Solution = { path: Array<PathStep>; cost: number }
+
+const astar = (start: PathStep, end: Pair, grid: Array<Array<Space>>): Solution => {
+    const openList: Array<PathStep> = []
+    const closedList: Array<PathStep> = []
     const bestCostsSoFar: Map<string, number> = new Map()
     const guessedCosts: Map<string, number> = new Map()
-    const parents: Map<string, Pair> = new Map()
+    const parents: Map<string, PathStep> = new Map()
 
     // initial state
     openList.push(start)
@@ -166,8 +91,10 @@ const astar = (start: Pair, end: Pair, grid: Array<Array<Space>>) => {
 
     for (let y = 0; y < grid.length; y++) {
         for (let x = 0; x < grid[0].length; x++) {
-            const key = JSON.stringify({ x, y })
-            guessedCosts.set(key, heuristic({ x, y }, end))
+            for (const dir of [Direction.Up, Direction.Down, Direction.Left, Direction.Right]) {
+                const key = JSON.stringify({ x, y, dir })
+                guessedCosts.set(key, heuristic({ x, y }, end))
+            }
         }
     }
 
@@ -180,25 +107,19 @@ const astar = (start: Pair, end: Pair, grid: Array<Array<Space>>) => {
         })
         const currentNode = openList[costs.indexOf(Math.min(...costs))]
 
-        if (currentNode.x === 139 && currentNode.y === 3) {
-            console.log('here')
-        }
-
         // got to the end
         if (currentNode.x == end.x && currentNode.y == end.y) {
             let curr = currentNode
-            const ret: Array<Pair> = []
+            const ret: Array<PathStep> = []
             while (parents.get(JSON.stringify(curr))) {
                 ret.push(curr)
                 curr = parents.get(JSON.stringify(curr))!
             }
-            return ret.reverse()
+            return { path: ret.reverse(), cost: bestCostsSoFar.get(JSON.stringify(currentNode))! }
         }
 
         // check all neighbors
-        const indexOfCurrent = openList.findIndex(
-            (p) => p.x === currentNode.x && p.y === currentNode.y,
-        )
+        const indexOfCurrent = openList.findIndex((p) => equal(p, currentNode))
         openList.splice(indexOfCurrent, 1)
         closedList.push(currentNode)
         const adjacentList = neighbors(currentNode, grid)
@@ -206,16 +127,42 @@ const astar = (start: Pair, end: Pair, grid: Array<Array<Space>>) => {
         adjacentList.forEach((neighbor) => {
             const neighborKey = JSON.stringify(neighbor)
 
-            if (closedList.findIndex((p) => p.x === neighbor.x && p.y === neighbor.y) != -1) {
+            if (closedList.findIndex((p) => equal(p, neighbor)) != -1) {
                 // not a valid node to process, skip to next neighbor
                 return
             }
 
             // compute score to this node
-            const gScore = bestCostsSoFar.get(JSON.stringify(currentNode))! + 1
+            const penalty =
+                currentNode.dir === Direction.Up
+                    ? neighbor.dir === Direction.Down
+                        ? 2000
+                        : neighbor.dir === Direction.Up
+                          ? 0
+                          : 1000
+                    : currentNode.dir === Direction.Down
+                      ? neighbor.dir === Direction.Up
+                          ? 2000
+                          : neighbor.dir === Direction.Down
+                            ? 0
+                            : 1000
+                      : currentNode.dir === Direction.Left
+                        ? neighbor.dir === Direction.Right
+                            ? 2000
+                            : neighbor.dir === Direction.Left
+                              ? 0
+                              : 1000
+                        : currentNode.dir === Direction.Right
+                          ? neighbor.dir === Direction.Left
+                              ? 2000
+                              : neighbor.dir === Direction.Right
+                                ? 0
+                                : 1000
+                          : Infinity
+            const gScore = bestCostsSoFar.get(JSON.stringify(currentNode))! + 1 + penalty
             let gScoreBest = false
 
-            if (openList.findIndex((p) => p.x === neighbor.x && p.y === neighbor.y) === -1) {
+            if (openList.findIndex((p) => equal(p, neighbor)) === -1) {
                 // haven't been to this node, put it in the open list
                 gScoreBest = true
                 openList.push(neighbor)
@@ -233,7 +180,7 @@ const astar = (start: Pair, end: Pair, grid: Array<Array<Space>>) => {
     }
 
     // no path
-    return []
+    return { path: [], cost: Infinity }
 }
 
 const startY = maze.findIndex((row) => row.includes(Space.Start))
@@ -244,10 +191,8 @@ const endX = maze[endY].findIndex((space) => space === Space.End)
 console.log(startX, startY)
 console.log(maze[0].length, maze.length)
 
-const cheapest = astar({ x: startX, y: startY }, { x: endX, y: endY }, maze)
+const cheapest = astar({ x: startX, y: startY, dir: Direction.Right }, { x: endX, y: endY }, maze)
 
 console.log(cheapest)
 
-// 153556 too high
-
-// 105496 is probably the right answer
+// part 2
