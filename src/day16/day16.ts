@@ -1,4 +1,5 @@
 import * as fs from 'fs'
+import * as sea from "node:sea";
 
 const rawFile = fs.readFileSync('input.txt', 'utf8')
 
@@ -56,6 +57,34 @@ lines.forEach((line) => {
 
 const equal = (a: PathStep, b: PathStep) => a.x === b.x && a.y === b.y && a.dir === b.dir
 
+const getPenalty = (current: Direction, future: Direction) => {
+    return current === Direction.Up
+        ? future === Direction.Down
+            ? 2000
+            : future === Direction.Up
+              ? 0
+              : 1000
+        : current === Direction.Down
+          ? future === Direction.Up
+              ? 2000
+              : future === Direction.Down
+                ? 0
+                : 1000
+          : current === Direction.Left
+            ? future === Direction.Right
+                ? 2000
+                : future === Direction.Left
+                  ? 0
+                  : 1000
+            : current === Direction.Right
+              ? future === Direction.Left
+                  ? 2000
+                  : future === Direction.Right
+                    ? 0
+                    : 1000
+              : Infinity
+}
+
 const heuristic = (a: Pair, b: Pair) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y)
 
 const neighbors = (node: Pair, grid: Array<Array<Space>>) => {
@@ -76,111 +105,128 @@ const neighbors = (node: Pair, grid: Array<Array<Space>>) => {
     return ret
 }
 
-type Solution = { path: Array<PathStep>; cost: number }
+const printPath = (path: Array<PathStep>, grid: Array<Array<Space>>) => {
+    grid.forEach((row, y) => {
+        let rowStr = ''
+
+        row.forEach((space, x) => {
+            let char = ''
+            switch (space) {
+                case Space.Path:
+                    char = '.'
+                    break
+                case Space.Wall:
+                    char = '#'
+                    break
+                case Space.Start:
+                    char = 'S'
+                    break
+                case Space.End:
+                    char = 'E'
+                    break
+            }
+            if (path.findIndex((step) => step.x === x && step.y === y) !== -1) {
+                char = 'O'
+            }
+            rowStr += char
+        })
+
+        console.log(rowStr)
+    })
+}
+
+const toKey = (pathStep: PathStep): string => {
+    return pathStep === undefined
+        ? 'undefined'
+        : JSON.stringify({ x: pathStep.x, y: pathStep.y, dir: pathStep.dir })
+}
+
+type Solution = { paths: Array<Array<PathStep>>; cost: number }
 
 const astar = (start: PathStep, end: Pair, grid: Array<Array<Space>>): Solution => {
     const openList: Array<PathStep> = []
-    const closedList: Array<PathStep> = []
     const bestCostsSoFar: Map<string, number> = new Map()
-    const guessedCosts: Map<string, number> = new Map()
-    const parents: Map<string, PathStep> = new Map()
+    const bestPathsSoFar: Map<string, Array<Array<PathStep>>> = new Map()
 
     // initial state
     openList.push(start)
-    bestCostsSoFar.set(JSON.stringify(start), 0)
+    bestCostsSoFar.set(toKey(start), 0)
+    bestPathsSoFar.set(toKey(start), [[start]])
 
-    for (let y = 0; y < grid.length; y++) {
-        for (let x = 0; x < grid[0].length; x++) {
-            for (const dir of [Direction.Up, Direction.Down, Direction.Left, Direction.Right]) {
-                const key = JSON.stringify({ x, y, dir })
-                guessedCosts.set(key, heuristic({ x, y }, end))
-            }
-        }
-    }
+    // return value
+    const allBestPaths: Array<Array<PathStep>> = []
+    let bestCostOverall = Infinity
 
     // loop through all spaces that have yet to be visited
     while (openList.length > 0) {
         // Grab the lowest f(x) to process next
-        const costs = openList.map((p) => {
-            const key = JSON.stringify(p)
-            return guessedCosts.get(key)! + bestCostsSoFar.get(key)!
-        })
+        const costs = openList.map(
+            (p) =>
+                heuristic({ x: p.x, y: p.y }, { x: end.x, y: end.y }) +
+                bestCostsSoFar.get(toKey(p))!,
+        )
         const currentNode = openList[costs.indexOf(Math.min(...costs))]
+        const currentPath = bestPathsSoFar.get(toKey(currentNode))![0]
 
-        // got to the end
+        // remove from open list
+        openList.splice(
+            openList.findIndex((p) => equal(p, currentNode)),
+            1,
+        )
+
+        // got to the end?
         if (currentNode.x == end.x && currentNode.y == end.y) {
-            let curr = currentNode
-            const ret: Array<PathStep> = []
-            while (parents.get(JSON.stringify(curr))) {
-                ret.push(curr)
-                curr = parents.get(JSON.stringify(curr))!
+            const solutionCost = bestCostsSoFar.get(toKey(currentNode))!
+            if (solutionCost < bestCostOverall) {
+                // this solution is better than any seen so far
+                allBestPaths.length = 0
+                allBestPaths.push(currentPath)
+                bestCostOverall = solutionCost
+            } else if (solutionCost === bestCostOverall) {
+                // another optimal solution
+                allBestPaths.push(currentPath)
             }
-            return { path: ret.reverse(), cost: bestCostsSoFar.get(JSON.stringify(currentNode))! }
+            continue
         }
 
         // check all neighbors
-        const indexOfCurrent = openList.findIndex((p) => equal(p, currentNode))
-        openList.splice(indexOfCurrent, 1)
-        closedList.push(currentNode)
         const adjacentList = neighbors(currentNode, grid)
 
         adjacentList.forEach((neighbor) => {
-            const neighborKey = JSON.stringify(neighbor)
 
-            if (closedList.findIndex((p) => equal(p, neighbor)) != -1) {
+            const neighborKey = toKey(neighbor)
+            const penalty = getPenalty(currentNode.dir, neighbor.dir)
+
+            // if this node is in the shortest path already, or if this is backtracking, skip
+            if (currentPath.findIndex((p) => equal(p, neighbor)) != -1 || penalty === 2000) {
                 // not a valid node to process, skip to next neighbor
                 return
             }
 
             // compute score to this node
-            const penalty =
-                currentNode.dir === Direction.Up
-                    ? neighbor.dir === Direction.Down
-                        ? 2000
-                        : neighbor.dir === Direction.Up
-                          ? 0
-                          : 1000
-                    : currentNode.dir === Direction.Down
-                      ? neighbor.dir === Direction.Up
-                          ? 2000
-                          : neighbor.dir === Direction.Down
-                            ? 0
-                            : 1000
-                      : currentNode.dir === Direction.Left
-                        ? neighbor.dir === Direction.Right
-                            ? 2000
-                            : neighbor.dir === Direction.Left
-                              ? 0
-                              : 1000
-                        : currentNode.dir === Direction.Right
-                          ? neighbor.dir === Direction.Left
-                              ? 2000
-                              : neighbor.dir === Direction.Right
-                                ? 0
-                                : 1000
-                          : Infinity
-            const gScore = bestCostsSoFar.get(JSON.stringify(currentNode))! + 1 + penalty
-            let gScoreBest = false
+            const gScore = bestCostsSoFar.get(toKey(currentNode))! + 1 + penalty
 
-            if (openList.findIndex((p) => equal(p, neighbor)) === -1) {
-                // haven't been to this node, put it in the open list
-                gScoreBest = true
+            if (gScore > bestCostOverall) return
+
+            if (!bestPathsSoFar.has(neighborKey)) {
+                // we've never seen this node before
+                bestPathsSoFar.set(neighborKey, [[...currentPath, neighbor]])
+                bestCostsSoFar.set(neighborKey, gScore)
                 openList.push(neighbor)
             } else if (gScore < bestCostsSoFar.get(neighborKey)!) {
-                // We've been to this node before, but this path is better
-                gScoreBest = true
-            }
-
-            if (gScoreBest) {
-                // optimal path so far
-                parents.set(neighborKey, currentNode)
+                // This is a better path, clear previous paths and store the new best path
+                bestPathsSoFar.set(neighborKey, [[...currentPath, neighbor]])
                 bestCostsSoFar.set(neighborKey, gScore)
+                openList.push(neighbor)
+            } else if (gScore === bestCostsSoFar.get(neighborKey)!) {
+                // This path has the same cost, add it as an alternative best path
+                bestPathsSoFar.get(neighborKey)!.push([...currentPath, neighbor])
+                openList.push(neighbor)
             }
         })
     }
 
-    // no path
-    return { path: [], cost: Infinity }
+    return { paths: allBestPaths, cost: bestCostOverall }
 }
 
 const startY = maze.findIndex((row) => row.includes(Space.Start))
@@ -189,10 +235,12 @@ const startX = maze[startY].findIndex((space) => space === Space.Start)
 const endY = maze.findIndex((row) => row.includes(Space.End))
 const endX = maze[endY].findIndex((space) => space === Space.End)
 console.log(startX, startY)
-console.log(maze[0].length, maze.length)
+console.log(endX, endY)
 
-const cheapest = astar({ x: startX, y: startY, dir: Direction.Right }, { x: endX, y: endY }, maze)
+const solution = astar({ x: startX, y: startY, dir: Direction.Right }, { x: endX, y: endY }, maze)
 
-console.log(cheapest)
+console.log(solution.cost)
 
-// part 2
+const seatSet = new Set(solution.paths.flatMap((path) => path.map((step) => ({ x: step.x, y: step.y }))))
+
+console.log(seatSet.size)
