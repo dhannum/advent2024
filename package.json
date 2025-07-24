@@ -2,9 +2,12 @@
   "name": "advent2024",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "clean:all": "rm -rf dist node_modules"
   },
   "dependencies": {
     "@types/node": "^22.10.1"
