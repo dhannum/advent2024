@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import { isEqual, toWindows } from '../util/util'
+import { isEqual, toWindows } from '../../util/util'
 const rawFile = fs.readFileSync('input.txt', 'utf8')
 
 const lines = rawFile.split('\n')

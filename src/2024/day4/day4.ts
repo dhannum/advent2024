@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import { square, transpose } from '../util/util'
+import { square, transpose } from '../../util/util'
 const rawFile = fs.readFileSync('input.txt', 'utf8')
 
 const lines = rawFile.split('\n').filter((line) => line.length > 0)

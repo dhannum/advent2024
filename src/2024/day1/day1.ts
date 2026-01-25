@@ -1,5 +1,5 @@
 import * as fs from 'fs'
-import { zip } from '../util/util'
+import { zip } from '../../util/util'
 
 const rawFile = fs.readFileSync('input.txt', 'utf8')
 
