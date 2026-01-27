@@ -46,3 +46,10 @@ export const dumpToFile = (filename: string, data: string[] | string[][]) => {
     })
     file.end()
 }
+
+export const allIndexes = (str: string, target: string, start: number = 0) => {
+    const a: number[] = []
+    let i = start - 1
+    while ((i = str.indexOf(target, i + 1)) >= 0) a.push(i)
+    return a
+}
