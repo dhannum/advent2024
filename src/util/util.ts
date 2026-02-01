@@ -47,6 +47,10 @@ export const dumpToFile = (filename: string, data: string[] | string[][]) => {
     file.end()
 }
 
+export const printGrid = (data: string[][]) => {
+    data.forEach((row) => console.log(row.join(' ')))
+}
+
 export const allIndexes = (str: string, target: string, start: number = 0) => {
     const a: number[] = []
     let i = start - 1
