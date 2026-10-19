@@ -60,21 +60,21 @@ for (let row = 0; row < splitterLocations.length; row++) {
 
 console.log(totalSplits)
 
-const memoizedBeams = new Map<string, Set<string>>()
+const memoizedBeams = new Map<string, number>()
 const lastRow = splitterLocations.sort((a, b) => (a.y <= b.y ? 1 : -1))[0].y
 
 const stringifyLoc = (location: Location) => {
     return JSON.stringify(location)
 }
 
-const getAllPaths = (pathSoFar: string, beamLocation: Location): Set<string> => {
+const getAllPaths = (countSoFar: number, beamLocation: Location): number => {
     const splitterIndexesHit = splitterLocations
         .filter((s) => s.y === beamLocation.y && s.x === beamLocation.x)
         .map((s) => s.x)
 
     if (splitterIndexesHit.length > 0) {
-        let left: Set<string>
-        let right: Set<string>
+        let left: number
+        let right: number
 
         const cachedLeft = memoizedBeams.get(
             stringifyLoc({ x: beamLocation.x - 1, y: beamLocation.y }),
@@ -86,39 +86,30 @@ const getAllPaths = (pathSoFar: string, beamLocation: Location): Set<string> => 
         if (cachedLeft) {
             left = cachedLeft
         } else {
-            left = getAllPaths(pathSoFar, { x: beamLocation.x - 1, y: beamLocation.y })
+            left = getAllPaths(countSoFar, { x: beamLocation.x - 1, y: beamLocation.y })
             memoizedBeams.set(stringifyLoc({ x: beamLocation.x - 1, y: beamLocation.y }), left)
         }
 
         if (cachedRight) {
             right = cachedRight
         } else {
-            right = getAllPaths(pathSoFar, { x: beamLocation.x + 1, y: beamLocation.y })
+            right = getAllPaths(countSoFar, { x: beamLocation.x + 1, y: beamLocation.y })
             memoizedBeams.set(stringifyLoc({ x: beamLocation.x + 1, y: beamLocation.y }), right)
         }
 
-        const newList = new Set<string>([
-            ...Array.from(left).map((s) => `L${s}`),
-            ...Array.from(right).map((s) => `R${s}`),
-        ])
-
-        // if (beamLocation.x === 40 && beamLocation.y === 74) {
-        //     console.log(left.size)
-        //     left.forEach((s) => console.log(s))
-        // }
-
-        return newList
+        return left + right
     } else {
-        if (beamLocation.y <= lastRow) {
+        const nextSplitterRow = splitterLocations
+            .filter((s) => s.x === beamLocation.x && s.y >= beamLocation.y)
+            .map((s) => s.y)
+            .sort((x, y) => (x < y ? -1 : 1))[0]
+
+        if (beamLocation.y < lastRow && nextSplitterRow) {
             // skip until we find the next splitter down in the same column
-            const nextSplitterRow = splitterLocations
-                .filter((s) => s.x === beamLocation.x && s.y >= beamLocation.y)
-                .map((s) => s.y)
-                .sort((x, y) => (x < y ? -1 : 1))[0]
-            return getAllPaths(pathSoFar, { x: beamLocation.x, y: nextSplitterRow })
-        } else return new Set<string>([pathSoFar])
+            return getAllPaths(countSoFar, { x: beamLocation.x, y: nextSplitterRow })
+        } else return countSoFar + 1
     }
 }
 
-const allPaths = getAllPaths('', { x: startLocation, y: 0 })
+const allPaths = getAllPaths(0, { x: startLocation, y: 0 })
 console.log(allPaths)
